@@ -1,0 +1,33 @@
+services:
+  wpclone_proxy:
+    image: caddy:alpine
+    container_name: wpclone_proxy
+    restart: unless-stopped
+    networks:
+      - wpclone
+    # Map the app container exposed port to the host port.
+    ports:
+      - 80:80
+      - 443:443
+      - ${ADMIN_API_PORT:-2019}:2019
+    volumes:
+      - caddy_data:/data
+      - caddy_config:/config
+    # Caddy config
+      - $PWD/test/caddy/config/Caddyfile:/etc/caddy/Caddyfile
+    # Caddy certificate authority (CA)
+      - $PWD/test/caddy/certificate-authority:/data/caddy/pki/authorities/local
+
+
+volumes:
+  caddy_data:
+    driver: "local"
+    name: "${CONTAINER_VOLUME_DATA_NAME:-reverse_proxy_data}"
+  caddy_config:
+    driver: "local"
+    name: "${CONTAINER_VOLUME_CONFIG_NAME:-reverse_proxy_config}"
+
+networks:
+  wpclone:
+    name: wpclone
+    external: true

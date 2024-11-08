@@ -1,0 +1,15 @@
+---
+
+local:
+  path: {{ .LocalPath }}
+  url: {{ .LocalURL }}
+  docker: true
+
+remote:
+  path: /var/www/html
+  url: http://localhost:8080
+  ssh:
+    host: localhost
+    user: www-data
+    key: {{ .SSHKeyPath }}
+    port: 2222

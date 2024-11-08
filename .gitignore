@@ -1,0 +1,10 @@
+wpclone.yml
+
+bin/
+bla/
+av-weisweil.de
+integrative-onkologie.stage.croox.dev
+*.sql
+test_wpclone/
+
+dist/

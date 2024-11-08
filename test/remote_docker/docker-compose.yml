@@ -1,0 +1,40 @@
+services:
+  remote_wp:
+    build: .
+    environment:
+      WORDPRESS_DB_HOST: remote_db
+      WORDPRESS_DB_USER: wordpress_remote
+      WORDPRESS_DB_PASSWORD: wordpress_remote
+      WORDPRESS_DB_NAME: wordpress_remote
+      WORDPRESS_URL: http://localhost:8080
+      WORDPRESS_TITLE: "## REMOTE ##"
+      WORDPRESS_ADMIN_USER: admin
+      WORDPRESS_ADMIN_PASSWORD: admin
+      WORDPRESS_ADMIN_EMAIL: admin@example.com
+      WORDPRESS_LOCALE: de_DE
+      SSH_PUBLIC_KEY: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGFdsRuUxHG+MxdaeErY1KExG01fxyLEf2mYog2S1Sp5 tux@croox.com"
+    ports:
+      - "8080:80"
+      - "2222:22"
+    restart: always
+    volumes:
+      - remote_wp:/var/www/html
+    depends_on:
+      - remote_db
+
+  remote_db:
+    image: mysql:5.7
+    platform: linux/x86_64
+    restart: always
+    volumes:
+      - remote_db:/var/lib/mysql
+    environment: 
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_DATABASE: wordpress_remote
+      MYSQL_USER: wordpress_remote
+      MYSQL_PASSWORD: wordpress_remote
+
+
+volumes:
+  remote_db:
+  remote_wp:

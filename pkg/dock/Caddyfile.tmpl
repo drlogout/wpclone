@@ -1,0 +1,22 @@
+{
+    debug
+}
+
+{{ range . }}
+
+{{ if .SSLEnabled }}
+{{ .FQDN }} {
+    tls internal
+    redir /admin /wp-admin
+    reverse_proxy http://{{ .ContainerName }}:80
+    encode zstd gzip
+}
+{{ else }} 
+http://{{ .FQDN }} {
+    redir /admin /wp-admin
+    reverse_proxy http://{{ .ContainerName }}:80
+    encode zstd gzip
+}
+{{ end }} 
+
+{{ end }}

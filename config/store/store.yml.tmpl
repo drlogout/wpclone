@@ -1,0 +1,26 @@
+---
+
+# Managed by wpclone, do not edit
+
+# Remotes
+remotes:
+{{- range $slug, $remote := .Remotes }}
+{{- if ne $slug "" }}
+  {{ $slug }}:
+    db: 
+      host: {{ $remote.DB.Host }}
+      port: {{ $remote.DB.Port }}
+      name: {{ $remote.DB.Name }}
+      user: {{ $remote.DB.User }}
+      password: {{ $remote.DB.Password }}
+{{- end }}
+{{- end }}
+
+# Locals
+locals:
+{{- range $slug, $local := .Locals }}
+{{- if ne $slug "" }}
+  {{ $slug }}:
+    ssl_enabled: {{ $local.SSLEnabled }}
+{{- end }}
+{{- end }}

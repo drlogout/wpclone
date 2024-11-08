@@ -1,0 +1,33 @@
+---
+
+local:
+  path: {{ .Local.Path }}
+  url: {{ .LocalURL }}
+  db:
+    name: wpclone
+    user: wpclone
+    password: wpclone
+    # host: localhost # (default: 127.0.0.1)
+    # port: 33060 # (default: 3306)
+  # wp_cli: wp8.1 # (default: wp)
+  # docker: 
+    # all: true # (default: false)
+    # ssl: true # (default: false)
+    # db_only: true # (default: false)
+
+remote:
+  path: /home/example/example.com
+  url: https://example.com
+  ssh:
+    host: example.com
+    user: example
+    # key: ~/.ssh/tux@croox.com # (default: ~/.ssh/id_ed25519 or ~/.ssh/id_rsa)
+    # password: a-ssh-password # (if set, key will be ignored)
+    # port: 2222 # (default: 22)
+  # wp_cli: wp8.1 # (default: wp)
+  # db: # (optional, only needed if wp-config.php does not exist on remote or is force pushed)
+    # name: wpclone
+    # user: wpclone
+    # password: wpclone
+    # host: localhost # (default: 127.0.0.1)
+    # port: 33060 # (default: 3306)
