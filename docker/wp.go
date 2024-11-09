@@ -24,7 +24,7 @@ func InstallWP(cfg *config.Config) error {
 	return nil
 }
 
-func RemoveWP(cfg *config.Config) (*dock.Site, error) {
+func RemoveWP(cfg *config.Config) (*Site, error) {
 	wpContainer, err := dock.EnsureRemovedContainer(cfg.DockerWPContainerName())
 	if err != nil {
 		return nil, err
@@ -34,23 +34,46 @@ func RemoveWP(cfg *config.Config) (*dock.Site, error) {
 		return nil, nil
 	}
 
-	if err := dock.DBRemove(cfg.LocalDBName()); err != nil {
+	if err := DBRemove(cfg.LocalDBName()); err != nil {
 		return nil, err
 	}
 
-	if err := dock.UpdateProxy(); err != nil {
+	if err := UpdateProxy(); err != nil {
 		return nil, err
 	}
 
-	return &dock.Site{
-		WP: wpContainer,
+	return &Site{
+		WP: getWPCloneContainerInfo(wpContainer),
 	}, nil
 }
 
 func StopWP(cfg *config.Config) error {
-	if err := dock.StopWP(cfg.DockerWPContainerName()); err != nil {
+	client, err := dock.GetClient()
+	if err != nil {
+		return err
+	}
+
+	if err := dock.StopAndRemoveContainer(client, cfg.DockerWPContainerName()); err != nil {
 		return err
 	}
 
 	return nil
+}
+
+func IsWPRunning(name string) (bool, error) {
+	client, err := dock.GetClient()
+	if err != nil {
+		return false, err
+	}
+
+	container, err := dock.GetContainer(client, name)
+	if err != nil {
+		return false, err
+	}
+
+	if container == nil {
+		return false, nil
+	}
+
+	return true, nil
 }

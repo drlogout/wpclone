@@ -2,6 +2,7 @@ package common
 
 import (
 	"bufio"
+	"croox/wpclone/docker"
 	"croox/wpclone/pkg/dock"
 	"croox/wpclone/pkg/exec"
 	"croox/wpclone/pkg/message"
@@ -156,7 +157,7 @@ func checkLocalDNSServer() bool {
 }
 
 func areWebPortsInUseByWpclone() (bool, error) {
-	ports, err := dock.Ports()
+	ports, err := docker.UsedPorts()
 	if err != nil {
 		return false, err
 	}
@@ -173,7 +174,7 @@ func areWebPortsInUseByWpclone() (bool, error) {
 }
 
 func areDBPortsInUseByWpclone() (bool, error) {
-	ports, err := dock.Ports()
+	ports, err := docker.UsedPorts()
 	if err != nil {
 		return false, err
 	}

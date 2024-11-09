@@ -5,7 +5,6 @@ import (
 	"croox/wpclone/config"
 	"croox/wpclone/docker"
 	"croox/wpclone/local"
-	"croox/wpclone/pkg/dock"
 	"croox/wpclone/pkg/message"
 	"croox/wpclone/remote"
 
@@ -68,7 +67,7 @@ func pushFromContainer(cfg *config.Config) error {
 
 	spinner.Start("Setting up Docker environment")
 
-	opts := dock.WPOptions{
+	opts := docker.WPOptions{
 		Name:       cfg.DockerWPContainerName(),
 		LocalPath:  cfg.LocalPath(),
 		SSHKeyPath: cfg.SSHKeyPath(),
@@ -77,11 +76,11 @@ func pushFromContainer(cfg *config.Config) error {
 		CertDir:    cfg.CertDirPath(),
 		SSLEnabled: cfg.DockerSSLEnabled(),
 	}
-	if err := dock.EnsureWP(opts); err != nil {
+	if err := docker.EnsureWP(opts); err != nil {
 		return err
 	}
 
-	if err := dock.DBCreate(cfg.LocalDBName()); err != nil {
+	if err := docker.DBCreate(cfg.LocalDBName()); err != nil {
 		return err
 	}
 
@@ -134,12 +133,12 @@ func pushFromLocal(cfg *config.Config) error {
 
 	if cfg.DockerDBOnly() {
 		spinner.Start("Setting up Docker environment for DB")
-		_, err := dock.EnsureDB()
+		_, err := docker.EnsureDB()
 		if err != nil {
 			return err
 		}
 
-		if err := dock.DBCreate(cfg.LocalDBName()); err != nil {
+		if err := docker.DBCreate(cfg.LocalDBName()); err != nil {
 			return err
 		}
 		spinner.Stop("Set up Docker environment for DB")

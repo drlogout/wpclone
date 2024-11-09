@@ -2,7 +2,7 @@ package dbCmd
 
 import (
 	"croox/wpclone/cmd/common"
-	"croox/wpclone/pkg/dock"
+	"croox/wpclone/docker"
 	"croox/wpclone/pkg/exec"
 	"croox/wpclone/pkg/message"
 	"fmt"
@@ -36,7 +36,7 @@ var DB = &cli.Command{
 			Usage:   "List databases",
 			Aliases: []string{"ls"},
 			Action: func(ctx *cli.Context) error {
-				dbs, err := dock.ListDBs()
+				dbs, err := docker.ListDBs()
 				if err != nil {
 					return err
 				}
@@ -69,7 +69,7 @@ var DB = &cli.Command{
 					return message.Exit("database name is required")
 				}
 
-				exists, err := dock.DBExists(dbName)
+				exists, err := docker.DBExists(dbName)
 				if err != nil {
 					return err
 				}
@@ -78,7 +78,7 @@ var DB = &cli.Command{
 					return message.Exitf("Database %s already exists", dbName)
 				}
 
-				if err := dock.DBCreate(dbName); err != nil {
+				if err := docker.DBCreate(dbName); err != nil {
 					return err
 				}
 
@@ -98,7 +98,7 @@ var DB = &cli.Command{
 					return message.Exit("database name is required")
 				}
 
-				exists, err := dock.DBExists(dbName)
+				exists, err := docker.DBExists(dbName)
 				if err != nil {
 					return err
 				}
@@ -107,7 +107,7 @@ var DB = &cli.Command{
 					return message.Exitf("Database %s does not exists", dbName)
 				}
 
-				if err := dock.DBRemove(dbName); err != nil {
+				if err := docker.DBRemove(dbName); err != nil {
 					return err
 				}
 
@@ -135,7 +135,7 @@ var DB = &cli.Command{
 					dbName = cfg.LocalDBName()
 				}
 
-				exists, err := dock.DBExists(dbName)
+				exists, err := docker.DBExists(dbName)
 				if err != nil {
 					return err
 				}

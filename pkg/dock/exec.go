@@ -23,7 +23,7 @@ type ExecOptions struct {
 func Exec(opts ExecOptions) (int, error) {
 	log.Debugf("[docker.exec@%s] %s", opts.ContainerName, opts.Cmd)
 
-	client, err := getClient()
+	client, err := GetClient()
 	if err != nil {
 		return exitError, err
 	}
@@ -66,7 +66,7 @@ func Exec(opts ExecOptions) (int, error) {
 }
 
 func createExec(client *docker.Client, opts ExecOptions) (*docker.Exec, error) {
-	container, err := getContainer(client, opts.ContainerName)
+	container, err := GetContainer(client, opts.ContainerName)
 	if err != nil {
 		return nil, err
 	}

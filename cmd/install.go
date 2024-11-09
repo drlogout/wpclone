@@ -5,7 +5,6 @@ import (
 	"croox/wpclone/config"
 	"croox/wpclone/docker"
 	"croox/wpclone/local"
-	"croox/wpclone/pkg/dock"
 	"croox/wpclone/pkg/message"
 	"croox/wpclone/pkg/ternary"
 	"croox/wpclone/pkg/util"
@@ -106,27 +105,27 @@ func installWP(cfg *config.Config) error {
 
 func ensureWPBlankSlate(cfg *config.Config) error {
 	if cfg.RunInDocker() || cfg.DockerDBOnly() {
-		_, err := dock.EnsureDB()
+		_, err := docker.EnsureDB()
 		if err != nil {
 			return err
 		}
 
-		exists, err := dock.DBExists(cfg.LocalDBName())
+		exists, err := docker.DBExists(cfg.LocalDBName())
 		if err != nil {
 			return err
 		}
 
 		if exists {
-			if err := dock.DBRemove(cfg.LocalDBName()); err != nil {
+			if err := docker.DBRemove(cfg.LocalDBName()); err != nil {
 				return err
 			}
 		}
 
-		if err := dock.DBCreate(cfg.LocalDBName()); err != nil {
+		if err := docker.DBCreate(cfg.LocalDBName()); err != nil {
 			return err
 		}
 
-		if err := dock.DBWait(cfg.LocalDBName()); err != nil {
+		if err := docker.DBWait(cfg.LocalDBName()); err != nil {
 			return err
 		}
 	} else {
@@ -168,7 +167,7 @@ func ensureWPBlankSlate(cfg *config.Config) error {
 }
 
 func installWithContainerWPCli(cfg *config.Config) error {
-	opts := dock.WPOptions{
+	opts := docker.WPOptions{
 		Name:       cfg.DockerWPContainerName(),
 		LocalPath:  cfg.LocalPath(),
 		SSHKeyPath: cfg.SSHKeyPath(),
@@ -177,11 +176,11 @@ func installWithContainerWPCli(cfg *config.Config) error {
 		CertDir:    cfg.CertDirPath(),
 		SSLEnabled: cfg.DockerSSLEnabled(),
 	}
-	if err := dock.EnsureWP(opts); err != nil {
+	if err := docker.EnsureWP(opts); err != nil {
 		return err
 	}
 
-	if err := dock.DBCreate(cfg.LocalDBName()); err != nil {
+	if err := docker.DBCreate(cfg.LocalDBName()); err != nil {
 		return err
 	}
 
@@ -193,7 +192,7 @@ func installWithContainerWPCli(cfg *config.Config) error {
 		return err
 	}
 
-	if err := dock.UpdateProxy(); err != nil {
+	if err := docker.UpdateProxy(); err != nil {
 		return err
 	}
 
@@ -202,12 +201,12 @@ func installWithContainerWPCli(cfg *config.Config) error {
 
 func installWithLocalWPCli(cfg *config.Config) error {
 	if cfg.DockerDBOnly() {
-		_, err := dock.EnsureDB()
+		_, err := docker.EnsureDB()
 		if err != nil {
 			return err
 		}
 
-		if err := dock.DBCreate(cfg.LocalDBName()); err != nil {
+		if err := docker.DBCreate(cfg.LocalDBName()); err != nil {
 			return err
 		}
 	}

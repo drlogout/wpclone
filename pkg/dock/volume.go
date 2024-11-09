@@ -5,7 +5,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func ensureVolume(client *docker.Client, name string) (*docker.Volume, error) {
+func EnsureVolume(client *docker.Client, name string) (*docker.Volume, error) {
 	existingVolume, err := getVolume(client, name)
 	if err != nil && err != docker.ErrNoSuchVolume {
 		return nil, err
@@ -19,7 +19,7 @@ func ensureVolume(client *docker.Client, name string) (*docker.Volume, error) {
 		Name:   name,
 		Driver: "local",
 		Labels: map[string]string{
-			"wpclone_type": containerNameSuffix(name),
+			name: name,
 		},
 	}
 

@@ -9,7 +9,6 @@ import (
 	"time"
 
 	docker "github.com/fsouza/go-dockerclient"
-	"github.com/google/uuid"
 )
 
 const (
@@ -17,19 +16,6 @@ const (
 )
 
 var Verbose bool
-
-func ContainerName(s string) string {
-	return fmt.Sprintf("wpclone_%s", s)
-}
-
-func ContainerNameWithID(s string) string {
-	id := uuid.New()
-	return ContainerName(fmt.Sprintf("%s_%s", s, id))
-}
-
-func containerNameSuffix(s string) string {
-	return strings.TrimLeft(s, "wpclone_")
-}
 
 type ContainerOptions struct {
 	AutoRemove     bool
@@ -49,7 +35,7 @@ type ContainerOptions struct {
 	RestartPolicy  string
 }
 
-func createContainer(client *docker.Client, opts ContainerOptions) (*docker.Container, error) {
+func CreateContainer(client *docker.Client, opts ContainerOptions) (*docker.Container, error) {
 	if err := ensureImage(client, opts.Image); err != nil {
 		return nil, err
 	}
@@ -121,7 +107,7 @@ func createContainer(client *docker.Client, opts ContainerOptions) (*docker.Cont
 	return container, nil
 }
 
-func startContainer(client *docker.Client, id string) error {
+func StartContainer(client *docker.Client, id string) error {
 	if err := client.StartContainer(id, nil); err != nil {
 		return fmt.Errorf("failed to start container: %w", err)
 	}
@@ -129,50 +115,50 @@ func startContainer(client *docker.Client, id string) error {
 	return nil
 }
 
-func createAndStartContainer(client *docker.Client, opts ContainerOptions) (*docker.APIContainers, error) {
-	dockerContainer, err := createContainer(client, opts)
+func CreateAndStartContainer(client *docker.Client, opts ContainerOptions) (*docker.APIContainers, error) {
+	dockerContainer, err := CreateContainer(client, opts)
 	if err != nil {
 		return nil, err
 	}
 
-	if err := startContainer(client, dockerContainer.ID); err != nil {
+	if err := StartContainer(client, dockerContainer.ID); err != nil {
 		return nil, err
 	}
 
-	return getContainer(client, opts.Name)
+	return GetContainer(client, opts.Name)
 }
 
-func ensureContainer(client *docker.Client, opts ContainerOptions) (*docker.APIContainers, error) {
-	container, err := getContainer(client, opts.Name)
+func EnsureContainer(client *docker.Client, opts ContainerOptions) (*docker.APIContainers, error) {
+	container, err := GetContainer(client, opts.Name)
 	if err != nil {
 		return nil, err
 	}
 
 	if container != nil {
 		if !isRunning(container) {
-			if err := startContainer(client, container.ID); err != nil {
+			if err := StartContainer(client, container.ID); err != nil {
 				return nil, err
 			}
 		}
 
 		if !hasExpectedLabels(container.Labels, opts.Labels) {
-			if err := stopAndRemoveContainer(client, container.ID); err != nil {
+			if err := StopAndRemoveContainer(client, container.ID); err != nil {
 				return nil, err
 			}
 
-			return createAndStartContainer(client, opts)
+			return CreateAndStartContainer(client, opts)
 		}
 		return container, nil
 	}
 
-	return createAndStartContainer(client, opts)
+	return CreateAndStartContainer(client, opts)
 }
 
 func GetFunctionName(i interface{}) string {
 	return runtime.FuncForPC(reflect.ValueOf(i).Pointer()).Name()
 }
 
-func waitForContainerHealthy(client *docker.Client, containerID string, timeout time.Duration) error {
+func WaitForContainerHealthy(client *docker.Client, containerID string, timeout time.Duration) error {
 	startTime := time.Now()
 
 	for {
@@ -184,7 +170,7 @@ func waitForContainerHealthy(client *docker.Client, containerID string, timeout 
 			ID: containerID,
 		})
 		if err != nil {
-			return fmt.Errorf("%s | failed to inspect container: %w", GetFunctionName(waitForContainerHealthy), err)
+			return fmt.Errorf("%s | failed to inspect container: %w", GetFunctionName(WaitForContainerHealthy), err)
 		}
 
 		switch container.State.Health.Status {
@@ -196,7 +182,7 @@ func waitForContainerHealthy(client *docker.Client, containerID string, timeout 
 	}
 }
 
-func stopAndRemoveContainer(client *docker.Client, containerID string) error {
+func StopAndRemoveContainer(client *docker.Client, containerID string) error {
 	container, err := client.InspectContainerWithOptions(docker.InspectContainerOptions{
 		ID: containerID,
 	})
@@ -205,7 +191,7 @@ func stopAndRemoveContainer(client *docker.Client, containerID string) error {
 			return nil
 		}
 
-		return fmt.Errorf("%s | failed to inspect container: %w", GetFunctionName(stopAndRemoveContainer), err)
+		return fmt.Errorf("%s | failed to inspect container: %w", GetFunctionName(StopAndRemoveContainer), err)
 	}
 
 	if container.State.Running {
@@ -227,14 +213,14 @@ func stopAndRemoveContainer(client *docker.Client, containerID string) error {
 			return nil
 		}
 
-		return fmt.Errorf("%s | failed to remove container: %w", GetFunctionName(stopAndRemoveContainer), err)
+		return fmt.Errorf("%s | failed to remove container: %w", GetFunctionName(StopAndRemoveContainer), err)
 	}
 
 	return nil
 }
 
-func restartContainer(client *docker.Client, containerName string) error {
-	container, err := getContainer(client, containerName)
+func RestartContainer(client *docker.Client, containerName string) error {
+	container, err := GetContainer(client, containerName)
 	if err != nil {
 		return err
 	}
@@ -250,33 +236,7 @@ func restartContainer(client *docker.Client, containerName string) error {
 	return nil
 }
 
-type WPCloneContainerInfo struct {
-	ContainerName string
-	FQDN          string
-	ID            string
-	SSLEnabled    bool
-	State         string
-	Type          string
-	URL           string
-}
-
-type Site struct {
-	WP WPCloneContainerInfo
-}
-
-func getWPCloneContainerInfo(container docker.APIContainers) WPCloneContainerInfo {
-	return WPCloneContainerInfo{
-		ContainerName: strings.TrimLeft(container.Names[0], "/"),
-		FQDN:          container.Labels["wpclone_fqdn"],
-		ID:            container.ID,
-		SSLEnabled:    container.Labels["wpclone_ssl"] == "true",
-		State:         container.State,
-		URL:           container.Labels["wpclone_url"],
-		Type:          container.Labels["wpclone_type"],
-	}
-}
-
-func getContainer(client *docker.Client, name string) (*docker.APIContainers, error) {
+func GetContainer(client *docker.Client, name string) (*docker.APIContainers, error) {
 	containers, err := client.ListContainers(docker.ListContainersOptions{All: true})
 	if err != nil {
 		return nil, err

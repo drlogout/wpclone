@@ -27,7 +27,7 @@ func Rsync(cfg *config.Config, src, dest string, excludes ...string) error {
 	args = append(args, "-e", sshCommand)
 	args = append(args, src, dest)
 
-	opts := dock.RunOpts{
+	opts := RunOpts{
 		Binds: []string{
 			cfg.LocalPath() + ":/var/www/html",
 			cfg.SSHKeyPath() + ":/root/.ssh/id_rsa",
@@ -41,7 +41,7 @@ func Rsync(cfg *config.Config, src, dest string, excludes ...string) error {
 		}
 	}
 
-	if err := dock.RunRsync(opts, args...); err != nil {
+	if err := RunRsync(opts, args...); err != nil {
 		return err
 	}
 
@@ -57,11 +57,51 @@ func WPCli(cfg *config.Config, arg ...string) error {
 }
 
 func runShell(cfg *config.Config, name string, arg ...string) error {
-	opts := dock.RunOpts{
+	opts := RunOpts{
 		Binds: []string{
 			cfg.LocalPath() + ":/var/www/html",
 		},
 	}
 
-	return dock.RunShell(opts, name, arg...)
+	return RunShell(opts, name, arg...)
+}
+
+type RunOpts struct {
+	Binds []string
+	Env   []string
+}
+
+func RunRsync(runOpts RunOpts, arg ...string) error {
+	opts := dock.RunOptions{
+		Name:  config.ContainerNameWithID("rsync"),
+		Image: imageRsync,
+		Binds: runOpts.Binds,
+		Cmd:   arg,
+		Labels: map[string]string{
+			"wpclone_type":      "rsync",
+			"wpclone_ephimeral": "true",
+		},
+		Env: runOpts.Env,
+	}
+
+	if err := dock.Run(opts); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func RunShell(runOpts RunOpts, name string, arg ...string) error {
+	return dock.Run(dock.RunOptions{
+		Cmd:        append([]string{name}, arg...),
+		Name:       config.ContainerNameWithID("cli"),
+		Image:      imageCLI,
+		Network:    networkProxy,
+		Binds:      runOpts.Binds,
+		WorkingDir: "/var/www/html",
+		Labels: map[string]string{
+			"wpclone_type":      "cli",
+			"wpclone_ephimeral": "true",
+		},
+	})
 }

@@ -1,7 +1,7 @@
 package dock
 
 func Ping() error {
-	client, err := getClient()
+	client, err := GetClient()
 	if err != nil {
 		return err
 	}
@@ -14,38 +14,15 @@ func Ping() error {
 	return nil
 }
 
-func Ports() ([]int, error) {
-	ports := make([]int, 0)
-	proxyPorts, err := getPorts(ContainerName("proxy"), "tcp")
-	if err != nil {
-		return nil, err
-	}
-	ports = append(ports, proxyPorts...)
-
-	dnsmasqPorts, err := getPorts(ContainerName("dnsmasq"), "udp")
-	if err != nil {
-		return nil, err
-	}
-	ports = append(ports, dnsmasqPorts...)
-
-	dbPorts, err := getPorts(ContainerName("db"), "tcp")
-	if err != nil {
-		return nil, err
-	}
-	ports = append(ports, dbPorts...)
-
-	return ports, nil
-}
-
-func getPorts(name, proto string) ([]int, error) {
+func GetContainerPorts(name, proto string) ([]int, error) {
 	ports := make([]int, 0)
 
-	client, err := getClient()
+	client, err := GetClient()
 	if err != nil {
 		return nil, err
 	}
 
-	container, err := getContainer(client, name)
+	container, err := GetContainer(client, name)
 	if err != nil {
 		return nil, err
 	}

@@ -10,7 +10,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-type runOptions struct {
+type RunOptions struct {
 	Name       string
 	Cmd        []string
 	Image      string
@@ -22,50 +22,10 @@ type runOptions struct {
 	Writer     io.Writer
 }
 
-type RunOpts struct {
-	Binds []string
-	Env   []string
-}
-
-func RunRsync(runOpts RunOpts, arg ...string) error {
-	opts := runOptions{
-		Name:  ContainerNameWithID("rsync"),
-		Image: imageRsync,
-		Binds: runOpts.Binds,
-		Cmd:   arg,
-		Labels: map[string]string{
-			"wpclone_type":      "rsync",
-			"wpclone_ephimeral": "true",
-		},
-		Env: runOpts.Env,
-	}
-
-	if err := run(opts); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func RunShell(runOpts RunOpts, name string, arg ...string) error {
-	return run(runOptions{
-		Cmd:        append([]string{name}, arg...),
-		Name:       ContainerNameWithID("cli"),
-		Image:      imageCLI,
-		Network:    networkProxy,
-		Binds:      runOpts.Binds,
-		WorkingDir: "/var/www/html",
-		Labels: map[string]string{
-			"wpclone_type":      "cli",
-			"wpclone_ephimeral": "true",
-		},
-	})
-}
-
-func run(opts runOptions) error {
+func Run(opts RunOptions) error {
 	log.Debugf("[docker.run]: %s", strings.Join(opts.Cmd, " "))
 
-	client, err := getClient()
+	client, err := GetClient()
 	if err != nil {
 		return err
 	}
@@ -85,7 +45,7 @@ func run(opts runOptions) error {
 	}
 
 	if opts.Network != "" {
-		n, err := ensureNetwork(client, opts.Network)
+		n, err := EnsureNetwork(client, opts.Network)
 		if err != nil {
 			return err
 		}
@@ -98,7 +58,7 @@ func run(opts runOptions) error {
 		return err
 	}
 
-	if err := stopAndRemoveContainer(client, container.ID); err != nil {
+	if err := StopAndRemoveContainer(client, container.ID); err != nil {
 		return err
 	}
 
@@ -116,7 +76,7 @@ func runContainer(client *docker.Client, opts ContainerOptions) (*docker.APICont
 		return nil, status, err
 	}
 
-	dockerContainer, err := createContainer(client, opts)
+	dockerContainer, err := CreateContainer(client, opts)
 	if err != nil {
 		return nil, status, err
 	}
@@ -145,7 +105,7 @@ func runContainer(client *docker.Client, opts ContainerOptions) (*docker.APICont
 		}
 	}()
 
-	if err := startContainer(client, dockerContainer.ID); err != nil {
+	if err := StartContainer(client, dockerContainer.ID); err != nil {
 		return nil, status, err
 	}
 
@@ -159,7 +119,7 @@ func runContainer(client *docker.Client, opts ContainerOptions) (*docker.APICont
 		return nil, status, fmt.Errorf("container exited with status %d", status)
 	}
 
-	container, err := getContainer(client, opts.Name)
+	container, err := GetContainer(client, opts.Name)
 	if err != nil {
 		return nil, status, err
 	}

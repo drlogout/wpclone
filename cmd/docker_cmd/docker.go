@@ -1,26 +1,18 @@
 package docker_cmd
 
 import (
-	"croox/wpclone/pkg/dock"
+	"croox/wpclone/docker"
 )
 
-func removeWPClone() ([]dock.WPCloneContainerInfo, error) {
-	containers, err := dock.RemoveAllContainers()
+func removeWPClone() ([]docker.WPCloneContainer, error) {
+	containers, err := docker.RemoveAllContainers()
 	if err != nil {
 		return nil, err
 	}
 
-	if err := dock.RemoveAllNetworks(); err != nil {
+	if err := docker.RemoveAllNetworks(); err != nil {
 		return nil, err
 	}
 
 	return containers, nil
-}
-
-func listContainers(all bool) ([]dock.WPCloneContainerInfo, error) {
-	if all {
-		return dock.ListContainers()
-	}
-
-	return dock.ListContainers("wp")
 }

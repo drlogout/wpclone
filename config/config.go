@@ -11,6 +11,7 @@ import (
 	"strings"
 	"text/template"
 
+	"github.com/google/uuid"
 	"gopkg.in/yaml.v3"
 )
 
@@ -133,6 +134,15 @@ func SaveInit(filePath string, cfg Config) error {
 	defer file.Close()
 
 	return t.ExecuteTemplate(file, "init.yml.tmpl", cfg)
+}
+
+func ContainerName(s string) string {
+	return fmt.Sprintf("wpclone_%s", s)
+}
+
+func ContainerNameWithID(s string) string {
+	id := uuid.New()
+	return ContainerName(fmt.Sprintf("%s_%s", s, id))
 }
 
 func checkMandatoryFields(cfg *Config) error {

@@ -6,8 +6,8 @@ import (
 	docker "github.com/fsouza/go-dockerclient"
 )
 
-func ensureNetwork(client *docker.Client, name string) (*docker.Network, error) {
-	network, err := getNetwork(client, name)
+func EnsureNetwork(client *docker.Client, name string) (*docker.Network, error) {
+	network, err := GetNetwork(client, name)
 	if err != nil {
 		return nil, err
 	}
@@ -19,7 +19,7 @@ func ensureNetwork(client *docker.Client, name string) (*docker.Network, error) 
 	network, err = client.CreateNetwork(docker.CreateNetworkOptions{
 		Name: name,
 		Labels: map[string]string{
-			"wpclone_type": containerNameSuffix(name),
+			name: name,
 		},
 	})
 	if err != nil {
@@ -29,7 +29,7 @@ func ensureNetwork(client *docker.Client, name string) (*docker.Network, error) 
 	return network, nil
 }
 
-func getNetwork(client *docker.Client, networkName string) (*docker.Network, error) {
+func GetNetwork(client *docker.Client, networkName string) (*docker.Network, error) {
 	networks, err := client.ListNetworks()
 	if err != nil {
 		return nil, fmt.Errorf("failed to list networks: %w", err)

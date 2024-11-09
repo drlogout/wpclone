@@ -4,48 +4,9 @@ import (
 	docker "github.com/fsouza/go-dockerclient"
 )
 
-func RemoveAllContainers() ([]WPCloneContainerInfo, error) {
-	containers, err := ListContainers()
-	if err != nil {
-		return nil, err
-	}
-
+func RemoveContainers(containers []docker.APIContainers) ([]docker.APIContainers, error) {
 	if len(containers) == 0 {
-		return []WPCloneContainerInfo{}, nil
-	}
-
-	for _, container := range containers {
-		if err := RemoveContainer(container.ID); err != nil {
-			return nil, err
-		}
-	}
-
-	return containers, nil
-}
-
-func RemoveAllContainersExceptDB() ([]WPCloneContainerInfo, error) {
-	containers := []WPCloneContainerInfo{}
-
-	wpContainers, err := ListContainers("wp")
-	if err != nil {
-		return nil, err
-	}
-	containers = append(containers, wpContainers...)
-
-	proxyContainer, err := ListContainers("proxy")
-	if err != nil {
-		return nil, err
-	}
-	containers = append(containers, proxyContainer...)
-
-	dnsmasqContainer, err := ListContainers("dnsmasq")
-	if err != nil {
-		return nil, err
-	}
-	containers = append(containers, dnsmasqContainer...)
-
-	if len(containers) == 0 {
-		return []WPCloneContainerInfo{}, nil
+		return []docker.APIContainers{}, nil
 	}
 
 	for _, container := range containers {
@@ -58,16 +19,16 @@ func RemoveAllContainersExceptDB() ([]WPCloneContainerInfo, error) {
 }
 
 func RemoveContainer(id string) error {
-	client, err := getClient()
+	client, err := GetClient()
 	if err != nil {
 		return err
 	}
 
-	return stopAndRemoveContainer(client, id)
+	return StopAndRemoveContainer(client, id)
 }
 
-func RemoveAllVolumes() error {
-	volumes, err := ListVolumes()
+func RemoveVolumes(filters map[string][]string) error {
+	volumes, err := ListVolumes(filters)
 	if err != nil {
 		return err
 	}
@@ -82,7 +43,7 @@ func RemoveAllVolumes() error {
 }
 
 func RemoveVolume(name string) error {
-	client, err := getClient()
+	client, err := GetClient()
 	if err != nil {
 		return err
 	}
@@ -93,8 +54,8 @@ func RemoveVolume(name string) error {
 	})
 }
 
-func RemoveAllNetworks() error {
-	networks, err := ListNetworks()
+func RemoveNetworks(filters map[string]map[string]bool) error {
+	networks, err := ListNetworks(filters)
 	if err != nil {
 		return err
 	}
@@ -109,7 +70,7 @@ func RemoveAllNetworks() error {
 }
 
 func RemoveNetwork(id string) error {
-	client, err := getClient()
+	client, err := GetClient()
 	if err != nil {
 		return err
 	}
@@ -117,19 +78,19 @@ func RemoveNetwork(id string) error {
 	return client.RemoveNetwork(id)
 }
 
-func EnsureRemovedContainer(name string) (WPCloneContainerInfo, error) {
-	client, err := getClient()
+func EnsureRemovedContainer(name string) (docker.APIContainers, error) {
+	client, err := GetClient()
 	if err != nil {
-		return WPCloneContainerInfo{}, err
+		return docker.APIContainers{}, err
 	}
 
-	container, err := getContainer(client, name)
+	container, err := GetContainer(client, name)
 	if err != nil {
-		return WPCloneContainerInfo{}, err
+		return docker.APIContainers{}, err
 	}
 
 	if container == nil {
-		return WPCloneContainerInfo{
+		return docker.APIContainers{
 			State: wpContainerStateMissing,
 		}, nil
 	}
@@ -138,23 +99,20 @@ func EnsureRemovedContainer(name string) (WPCloneContainerInfo, error) {
 		ID:    container.ID,
 		Force: true,
 	}); err != nil {
-		return WPCloneContainerInfo{}, err
+		return docker.APIContainers{}, err
 	}
 
-	info := getWPCloneContainerInfo(*container)
-	info.State = wpContainerStateDeleted
-
-	return info, nil
+	return *container, nil
 }
 
 func ensureContainerRemoved(client *docker.Client, name string) error {
-	container, err := getContainer(client, name)
+	container, err := GetContainer(client, name)
 	if err != nil {
 		return err
 	}
 
 	if container != nil {
-		if err := stopAndRemoveContainer(client, container.ID); err != nil {
+		if err := StopAndRemoveContainer(client, container.ID); err != nil {
 			return err
 		}
 	}

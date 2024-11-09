@@ -4,7 +4,6 @@ import (
 	"croox/wpclone/cmd/common"
 	"croox/wpclone/config"
 	"croox/wpclone/docker"
-	"croox/wpclone/pkg/dock"
 	"croox/wpclone/pkg/exec"
 	"croox/wpclone/pkg/message"
 	"os"
@@ -39,7 +38,7 @@ var Docker = &cli.Command{
 				},
 			},
 			Action: func(ctx *cli.Context) error {
-				containers, err := listContainers(ctx.Bool("all"))
+				containers, err := docker.ListContainers(ctx.Bool("all"))
 				if err != nil {
 					return err
 				}
@@ -80,7 +79,7 @@ var Docker = &cli.Command{
 					return message.Exit("Docker not enabled in wpclone.yaml")
 				}
 
-				running, err := dock.IsWPRunning(cfg.DockerWPContainerName())
+				running, err := docker.IsWPRunning(cfg.DockerWPContainerName())
 				if err != nil {
 					return err
 				}
@@ -89,7 +88,7 @@ var Docker = &cli.Command{
 					return message.Exitf("Container %s is already running", cfg.LocalURL())
 				}
 
-				opts := dock.WPOptions{
+				opts := docker.WPOptions{
 					Name:       cfg.DockerWPContainerName(),
 					LocalPath:  cfg.LocalPath(),
 					SSHKeyPath: cfg.SSHKeyPath(),
@@ -98,11 +97,11 @@ var Docker = &cli.Command{
 					CertDir:    cfg.CertDirPath(),
 					SSLEnabled: cfg.DockerSSLEnabled(),
 				}
-				if err := dock.EnsureWP(opts); err != nil {
+				if err := docker.EnsureWP(opts); err != nil {
 					return err
 				}
 
-				if err := dock.UpdateProxy(); err != nil {
+				if err := docker.UpdateProxy(); err != nil {
 					return err
 				}
 
@@ -121,7 +120,7 @@ var Docker = &cli.Command{
 			Action: func(ctx *cli.Context) error {
 				cfg := common.ConfigFromCTX(ctx)
 
-				running, err := dock.IsWPRunning(cfg.DockerWPContainerName())
+				running, err := docker.IsWPRunning(cfg.DockerWPContainerName())
 				if err != nil {
 					return err
 				}
@@ -177,7 +176,7 @@ var Docker = &cli.Command{
 				}
 
 				if ctx.Bool("volumes") {
-					if err := dock.RemoveAllVolumes(); err != nil {
+					if err := docker.RemoveAllVolumes(); err != nil {
 						return err
 					}
 				}
@@ -226,12 +225,12 @@ var Docker = &cli.Command{
 				common.BeforeCheckDockerDBPorts,
 			}),
 			Action: func(ctx *cli.Context) error {
-				_, err := dock.RemoveAllContainersExceptDB()
+				_, err := docker.RemoveAllContainersExceptDB()
 				if err != nil {
 					return err
 				}
 
-				_, err = dock.EnsureDB()
+				_, err = docker.EnsureDB()
 				if err != nil {
 					return err
 				}

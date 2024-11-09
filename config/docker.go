@@ -1,7 +1,6 @@
 package config
 
 import (
-	"croox/wpclone/pkg/dock"
 	"fmt"
 )
 
@@ -11,7 +10,7 @@ func (cfg Config) DockerDBDumpPath() string {
 
 func (cfg Config) DockerWPContainerName() string {
 	n := fmt.Sprintf("wp_%s", cfg.LocalSlug())
-	return dock.ContainerName(n)
+	return ContainerName(n)
 }
 
 func (cfg Config) DockerDBHost() string {
